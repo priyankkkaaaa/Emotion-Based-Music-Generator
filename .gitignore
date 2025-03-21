@@ -1,0 +1,11 @@
+# Ignore system & temp files
+.vscode/
+__pycache__/
+*.log
+*.tmp
+
+# Ignore large files
+*.mp3
+*.wav
+models/
+dataset/
