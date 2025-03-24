@@ -25,8 +25,8 @@ mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
 )
 
 # Spotify credentials (Replace with your own keys)
-SPOTIFY_CLIENT_ID = "your_client_id"
-SPOTIFY_CLIENT_SECRET = "your_client_secret"
+SPOTIFY_CLIENT_ID = "f50119de959f47c493435016de459412"
+SPOTIFY_CLIENT_SECRET = "d82cccab45d04b37bbb7e7c422731461"
 
 # Authenticate with Spotify
 sp = spotipy.Spotify(
