@@ -9,41 +9,33 @@ from sklearn.metrics import accuracy_score
 from joblib import dump
 
 def main():
-    # Path to your dataset folder (containing subfolders like happy, sad, etc.)
-    data_path = "fer2013/train"  # Adjust if needed
-    emotions = os.listdir(data_path)
+    # Path to dataset
+    data_path = "C:/Users/priya/OneDrive/Documents/my projects/mood based music generator/fer2013/train"
+    emotions = [d for d in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, d))]
     print("Emotions found:", emotions)
 
     mp_face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=True)
     
     X, y = [], []
 
-    # 1. Collect Data
+    # Collect Data
     for emotion in emotions:
         emotion_folder = os.path.join(data_path, emotion)
-        # Skip files that aren't folders
-        if not os.path.isdir(emotion_folder):
-            continue
-        
         print(f"Processing folder: {emotion_folder}")
+        
         for img_file in os.listdir(emotion_folder):
             img_path = os.path.join(emotion_folder, img_file)
             img = cv2.imread(img_path)
             if img is None:
-                continue  # skip broken images
+                continue  # Skip invalid images
             
-            # Convert to RGB for MediaPipe
+            # Convert to RGB
             rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results = mp_face_mesh.process(rgb_img)
             
             if results.multi_face_landmarks:
-                # Take the first face only
                 landmarks = results.multi_face_landmarks[0].landmark
-                features = []
-                # Flatten (x, y) for 468 landmarks => 936 features
-                for lm in landmarks:
-                    features.append(lm.x)
-                    features.append(lm.y)
+                features = [coord for lm in landmarks for coord in (lm.x, lm.y)]
                 
                 X.append(features)
                 y.append(emotion)
@@ -52,28 +44,29 @@ def main():
     y = np.array(y)
     print(f"Total samples collected: {len(X)}")
 
-    # 2. Optional: Dimensionality Reduction (PCA)
-    pca = PCA(n_components=50)  # You can tweak this number
+    # Handle PCA safely
+    n_components = min(X.shape[0], 50)  # Prevents PCA errors if fewer samples exist
+    pca = PCA(n_components=n_components)
     X_reduced = pca.fit_transform(X)
     
-    # 3. Train/Test Split
+    # Train/Test Split
     X_train, X_test, y_train, y_test = train_test_split(
-        X_reduced, y, test_size=0.2, random_state=42
+        X_reduced, y, test_size=0.2, random_state=42, stratify=y
     )
     
-    # 4. Train Model (Logistic Regression)
+    # Train Model
     model = LogisticRegression(max_iter=1000)
     model.fit(X_train, y_train)
     
-    # 5. Evaluate
+    # Evaluate
     y_pred = model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     print(f"Accuracy on test set: {acc:.2f}")
-
-    # 6. Save Model + PCA
+    
+    # Save Model + PCA
     dump(model, "emotion_model.pkl")
     dump(pca, "pca_transform.pkl")
-    print("Saved model as 'emotion_model.pkl' and PCA as 'pca_transform.pkl'")
+    print("Model saved as 'emotion_model.pkl' and PCA as 'pca_transform.pkl'")
 
 if __name__ == "__main__":
     main()
